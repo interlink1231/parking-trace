@@ -18,7 +18,7 @@ const navItems: { id: Page; label: string; icon: typeof House }[] = [
 
 function App() {
   const [page, setPage] = useState<Page>('home')
-  const [dark, setDark] = useState(true)
+  const [dark, setDark] = useState(false)
   const [showAll, setShowAll] = useState(false)
   const [notice, setNotice] = useState('')
   const [search, setSearch] = useState('')
@@ -90,37 +90,38 @@ function PageHeading({ eyebrow, title, description, action }: { eyebrow: string;
 
 function HomePage({ onNavigate, onNotify }: { onNavigate: (p: Page) => void; onNotify: (s: string) => void }) {
   return <>
-    <PageHeading eyebrow="OVERVIEW" title="내 차량 찾기" description="마지막으로 기록된 차량의 위치를 확인하세요." action={<button className="outline-button" onClick={() => onNavigate('history')}><History size={16} /> 기록 전체보기</button>} />
-    <section className="hero-card">
-      <div className="hero-copy">
-        <div className="status-pill"><span className="live-dot" /> LAST PARKING SAVED</div>
-        <div className="hero-label">마지막 주차 위치</div>
-        <h2>지하 2층 <span>B2</span></h2>
-        <div className="hero-place"><MapPin size={16} /> 센트럴 주차장 · A 구역</div>
-        <div className="hero-meta"><span><Clock3 size={14} /> 오늘 오후 3:42</span><span className="meta-divider" /><span><ShieldCheck size={14} /> 위치 신뢰도 높음</span></div>
-        <button className="primary-button" onClick={() => onNavigate('location')}><Navigation size={17} /> 차량 위치 확인 <ChevronRight size={16} /></button>
+    <div className="blue-home-head">
+      <div><span className="blue-kicker">PARKING TRACE</span><h1>내 차량</h1></div>
+      <button className="blue-settings" onClick={() => onNavigate('settings')} aria-label="설정"><Settings size={21} /></button>
+    </div>
+    <section className="vehicle-card">
+      <div className="vehicle-status"><span className="live-dot" /> 마지막 주차 기록 <b>오늘 15:42</b></div>
+      <div className="vehicle-stage">
+        <div className="vehicle-glow" />
+        <div className="vehicle-art">
+          <div className="car-mirror mirror-left" /><div className="car-mirror mirror-right" />
+          <div className="car-body"><div className="car-glass-front" /><div className="car-glass-back" /><div className="car-roof" /><div className="car-line" /><div className="car-wheel wheel-left" /><div className="car-wheel wheel-right" /></div>
+        </div>
       </div>
-      <div className="hero-visual">
-        <div className="map-grid" />
-        <div className="map-road road-one" /><div className="map-road road-two" /><div className="map-road road-three" />
-        <div className="map-block block-one">A ZONE</div><div className="map-block block-two">B ZONE</div><div className="map-block block-three">EXIT</div>
-        <div className="map-route" />
-        <div className="map-pin"><div><CarFront size={22} /></div><span /></div>
-        <div className="map-caption"><MapPin size={13} /> PARKING LOCATION <b> B2 · A-14</b></div>
-        <div className="map-zoom"><button aria-label="확대" onClick={() => onNotify('지도 확대는 실제 지도 연동 후 제공됩니다.')}>+</button><button aria-label="축소" onClick={() => onNotify('지도 축소는 실제 지도 연동 후 제공됩니다.')}>−</button></div>
-      </div>
+      <div className="vehicle-caption"><div><small>저장된 주차 위치</small><h2>지하 2층 <span>B2</span></h2><p><MapPin size={15} /> 센트럴 주차장 · A 구역 A-14</p></div><span className="confidence-chip"><ShieldCheck size={14} /> 신뢰도 높음</span></div>
     </section>
 
-    <div className="section-row"><div><h3>상태 요약</h3><p>연결된 기기와 마지막 기록 정보</p></div><span className="updated-label">방금 업데이트</span></div>
-    <div className="stats-grid">
-      <StatCard icon={<Bluetooth size={18} />} label="기기 연결" value="연결됨" sub="PT-ESP32-S3" tone="green" />
-      <StatCard icon={<MapPin size={18} />} label="마지막 위치" value="지하 2층" sub="A 구역 · A-14" />
-      <StatCard icon={<Battery size={18} />} label="기기 배터리" value="86%" sub="정상 상태" tone="green" />
-      <StatCard icon={<Activity size={18} />} label="센서 상태" value="정상" sub="GNSS · BMP390 · IMU" tone="green" />
+    <div className="blue-section-title"><div><h3>빠른 메뉴</h3><p>주차 위치와 기록을 빠르게 확인하세요.</p></div></div>
+    <div className="blue-action-grid">
+      <button className="blue-action-card featured" onClick={() => onNavigate('location')}><span className="blue-action-icon"><MapPin size={23} /></span><b>차량 위치</b><small>저장된 위치 확인</small><ChevronRight size={17} /></button>
+      <button className="blue-action-card" onClick={() => onNavigate('history')}><span className="blue-action-icon"><History size={23} /></span><b>주차 기록</b><small>이전 주차 내역</small><ChevronRight size={17} /></button>
+      <button className="blue-action-card" onClick={() => onNavigate('device')}><span className="blue-action-icon"><Bluetooth size={23} /></span><b>기기 연결</b><small>ESP32-S3 연결 상태</small><ChevronRight size={17} /></button>
     </div>
 
-    <div className="section-row"><div><h3>최근 주차 기록</h3><p>최근 차량 이동 및 주차 내역</p></div><button className="text-button" onClick={() => onNavigate('history')}>전체 기록 <ChevronRight size={15} /></button></div>
-    <div className="record-list">
+    <div className="blue-section-title"><div><h3>주차 정보</h3><p>가장 최근에 저장된 데이터</p></div><button className="text-button" onClick={() => onNavigate('history')}>전체보기 <ChevronRight size={15} /></button></div>
+    <div className="blue-info-grid">
+      <div className="blue-info-card"><span>주차 층수</span><b>B2 · 지하 2층</b></div>
+      <div className="blue-info-card"><span>주차 구역</span><b>A 구역 · A-14</b></div>
+      <div className="blue-info-card"><span>기기 상태</span><b className="green">정상 연결</b></div>
+      <div className="blue-info-card"><span>센서 상태</span><b className="green">정상 작동</b></div>
+    </div>
+    <div className="blue-section-title"><div><h3>최근 주차 기록</h3><p>최근 차량 이동 및 주차 내역</p></div></div>
+    <div className="record-list blue-record-list">
       <Record date="오늘" time="15:42" place="센트럴 주차장" detail="지하 2층 · A 구역" tag="주차 완료" />
       <Record date="어제" time="18:16" place="학교 주차장" detail="지상 1층 · 정문 방향" tag="주차 완료" />
       <Record date="11월 13일" time="17:51" place="센트럴 주차장" detail="지하 1층 · B 구역" tag="주차 완료" />
