@@ -1,9 +1,9 @@
-import { useState } from 'react'
+import { useState, type ReactNode } from 'react'
 import {
-  Activity, ArrowDownRight, ArrowUpRight, Battery, Bluetooth, CarFront,
+  Activity, ArrowUpRight, Battery, Bluetooth, CarFront,
   Check, ChevronRight, Clock3, Compass, History, House, MapPin, Moon,
   MoreHorizontal, Navigation, Radio, Search, Settings, ShieldCheck,
-  Signal, Sun, Wifi, X
+  Signal, Sun, Wifi
 } from 'lucide-react'
 
 type Page = 'home' | 'location' | 'history' | 'device' | 'settings'
@@ -84,7 +84,7 @@ function App() {
   )
 }
 
-function PageHeading({ eyebrow, title, description, action }: { eyebrow: string; title: string; description: string; action?: React.ReactNode }) {
+function PageHeading({ eyebrow, title, description, action }: { eyebrow: string; title: string; description: string; action?: ReactNode }) {
   return <div className="page-heading"><div><div className="eyebrow">{eyebrow}</div><h1>{title}</h1><p>{description}</p></div>{action}</div>
 }
 
@@ -128,7 +128,7 @@ function HomePage({ onNavigate, onNotify }: { onNavigate: (p: Page) => void; onN
   </>
 }
 
-function StatCard({ icon, label, value, sub, tone = '' }: { icon: React.ReactNode; label: string; value: string; sub: string; tone?: string }) {
+function StatCard({ icon, label, value, sub, tone = '' }: { icon: ReactNode; label: string; value: string; sub: string; tone?: string }) {
   return <div className="stat-card"><div className="stat-top"><span className="stat-icon">{icon}</span><span className="stat-label">{label}</span></div><strong className={tone}>{value}</strong><small>{sub}</small></div>
 }
 
@@ -196,7 +196,7 @@ function DevicePage({ onNotify }: { onNotify: (s: string) => void }) {
   </>
 }
 
-function Sensor({ icon, name, model, state, value }: { icon: React.ReactNode; name: string; model: string; state: string; value: string }) {
+function Sensor({ icon, name, model, state, value }: { icon: ReactNode; name: string; model: string; state: string; value: string }) {
   return <div className="sensor-card"><div className="sensor-top"><span className="sensor-icon">{icon}</span><span className="sensor-state"><i />{state}</span></div><h3>{name}</h3><small>{model}</small><p>{value}</p></div>
 }
 function InfoLine({ label, value }: { label: string; value: string }) {
