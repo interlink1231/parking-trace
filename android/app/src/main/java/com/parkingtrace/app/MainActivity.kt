@@ -69,7 +69,7 @@ class MainActivity : ComponentActivity() {
                 devices.add(Nearby(d, label))
             }
             val requestedId = targetDeviceId.value.trim().uppercase()
-            if (requestedId.matches(Regex("PT-[0-9A-F]{6}")) && label.uppercase() == requestedId) {
+            if (isScanning.value && requestedId.matches(Regex("PT-[0-9A-F]{6}")) && label.uppercase() == requestedId) {
                 adapter?.bluetoothLeScanner?.stopScan(this)
                 isScanning.value = false
                 connect(d)
