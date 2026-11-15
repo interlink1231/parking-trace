@@ -1,48 +1,59 @@
 # PARKING TRACE ESP32-S3 Firmware
 
-ESP-IDF firmware workspace for the vehicle-mounted PARKING TRACE unit.
+ESP-IDF firmware for the vehicle-mounted PARKING TRACE unit.
 
-## Current scope
+## Current implementation
 
-This initial scaffold establishes the firmware project boundary and shared BLE identifiers. It is not yet a working BLE implementation.
+The first NimBLE milestone is implemented in source:
 
-### Target hardware
+- Advertises a BLE peripheral using the PARKING TRACE custom 128-bit service UUID.
+- Uses a stable board-specific identifier in the form `PT-XXXXXX`, derived from the Bluetooth MAC address suffix.
+- Exposes read-only Device ID, Protocol Version, and Device Status characteristics.
+- Restarts advertising after a client disconnects.
+
+The current Device Status value is the static text `READY`. Sensor telemetry, authentication, and secure device claiming are not implemented yet.
+
+## Target hardware
+
 - ESP32-S3 development board
 - GNSS UART module
 - BMP390 I2C pressure sensor
 - MPU6050 I2C IMU
 
-### Toolchain
+## Toolchain
+
 - ESP-IDF 5.x
-- CMake / Ninja
+- NimBLE (provided by ESP-IDF Bluetooth component)
 - Target: `esp32s3`
-
-## Planned firmware milestones
-
-1. BLE service advertising and read-only identity characteristics
-2. Device status characteristic
-3. Secure claim/pairing protocol (must be finalized before enabling trusted access)
-4. Simulated telemetry notifications
-5. GNSS, BMP390, and MPU6050 drivers
-6. Parking-state estimation and telemetry integration
 
 ## Build
 
-After installing and exporting ESP-IDF 5.x:
+Open this `firmware` directory in VS Code with the Espressif ESP-IDF extension, select target `esp32s3`, then run Build.
+
+Equivalent terminal commands:
 
 ```bash
-cd firmware
 idf.py set-target esp32s3
-idf.py menuconfig
 idf.py build
 ```
 
-BLE host selection and controller settings must be enabled in ESP-IDF configuration. The BLE implementation will be added in the next firmware milestone after the project pins its ESP-IDF version and NimBLE configuration.
+If the project was previously configured for another target, remove the old build configuration using the ESP-IDF extension's full-clean command before rebuilding.
 
-## Important
+## BLE characteristics
 
-- Device ID is an identifier, never an authentication secret.
-- Do not ship firmware that trusts a matching ID alone.
-- Do not store production secrets in source control.
+| Characteristic | Access | Current value |
+|---|---|---|
+| Device ID | Read | PT-XXXXXX |
+| Protocol Version | Read | 1.0 |
+| Device Status | Read | READY |
+
+The UUIDs must remain synchronized with `docs/DEVICE_PROTOCOL_V1.md`.
+
+## Important limitations
+
+- Device ID is an identifier, not an authentication secret.
+- The MAC-derived ID is suitable for development identification, not proof of ownership.
+- Do not treat a matching Device ID as authorization to control or trust a device.
+- Secure claim/pairing and challenge-response authentication must be implemented before production use.
+- BLE code has not yet been compiled or tested on physical hardware in this development session.
 - No vehicle-control interfaces are implemented; the device is sensing-only.
-- Verify the exact ESP32-S3 board pinout and each sensor breakout's voltage requirements before wiring.
