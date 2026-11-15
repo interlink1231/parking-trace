@@ -1,7 +1,7 @@
 import { useState, type ReactNode } from 'react'
 import {
   Activity, ArrowUpRight, Battery, Bluetooth, CarFront,
-  Check, ChevronRight, Clock3, Compass, History, House, MapPin, Moon,
+  Check, ChevronRight, Compass, History, House, MapPin, Moon,
   MoreHorizontal, Navigation, Radio, Search, Settings, ShieldCheck,
   Signal, Sun, Wifi
 } from 'lucide-react'
@@ -63,7 +63,7 @@ function App() {
         </header>
 
         <div className="content">
-          {page === 'home' && <HomePage onNavigate={setPage} onNotify={notify} />}
+          {page === 'home' && <HomePage onNavigate={setPage} />}
           {page === 'location' && <LocationPage onNotify={notify} />}
           {page === 'history' && <HistoryPage showAll={showAll} setShowAll={setShowAll} search={search} setSearch={setSearch} />}
           {page === 'device' && <DevicePage onNotify={notify} />}
@@ -88,7 +88,7 @@ function PageHeading({ eyebrow, title, description, action }: { eyebrow: string;
   return <div className="page-heading"><div><div className="eyebrow">{eyebrow}</div><h1>{title}</h1><p>{description}</p></div>{action}</div>
 }
 
-function HomePage({ onNavigate, onNotify }: { onNavigate: (p: Page) => void; onNotify: (s: string) => void }) {
+function HomePage({ onNavigate }: { onNavigate: (p: Page) => void }) {
   return <>
     <div className="blue-home-head">
       <div><span className="blue-kicker">PARKING TRACE</span><h1>내 차량</h1></div>
@@ -127,10 +127,6 @@ function HomePage({ onNavigate, onNotify }: { onNavigate: (p: Page) => void; onN
       <Record date="11월 13일" time="17:51" place="센트럴 주차장" detail="지하 1층 · B 구역" tag="주차 완료" />
     </div>
   </>
-}
-
-function StatCard({ icon, label, value, sub, tone = '' }: { icon: ReactNode; label: string; value: string; sub: string; tone?: string }) {
-  return <div className="stat-card"><div className="stat-top"><span className="stat-icon">{icon}</span><span className="stat-label">{label}</span></div><strong className={tone}>{value}</strong><small>{sub}</small></div>
 }
 
 function Record({ date, time, place, detail, tag }: { date: string; time: string; place: string; detail: string; tag: string }) {
