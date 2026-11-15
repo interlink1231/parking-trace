@@ -96,12 +96,24 @@ function HomePage({ onNavigate }: { onNavigate: (p: Page) => void }) {
     </div>
     <section className="vehicle-card">
       <div className="vehicle-status"><span className="live-dot" /> 마지막 주차 기록 <b>오늘 15:42</b></div>
-      <div className="vehicle-stage">
-        <div className="vehicle-glow" />
-        <div className="vehicle-art">
-          <div className="car-mirror mirror-left" /><div className="car-mirror mirror-right" />
-          <div className="car-body"><div className="car-glass-front" /><div className="car-glass-back" /><div className="car-roof" /><div className="car-line" /><div className="car-wheel wheel-left" /><div className="car-wheel wheel-right" /></div>
+      <div className="device-3d-stage">
+        <div className="device-3d-glow" />
+        <div className="device-3d-scene" aria-label="PARKING TRACE 등록 기기 3D 미리보기">
+          <div className="device-board">
+            <div className="board-edge" />
+            <div className="pin-row pin-top">{Array.from({length:14}).map((_,i)=><i key={i}/>)}</div>
+            <div className="pin-row pin-bottom">{Array.from({length:14}).map((_,i)=><i key={i}/>)}</div>
+            <div className="esp-module"><div className="esp-shield">ESP32-S3</div><div className="esp-antenna" /></div>
+            <div className="usb-port" />
+            <div className="gps-module"><span className="module-label">GNSS</span><div className="gps-antenna" /></div>
+            <div className="imu-module"><span>MPU6050</span></div>
+            <div className="baro-module"><span>BMP390</span></div>
+            <div className="board-led led-one" /><div className="board-led led-two" />
+            <div className="board-mark">PARKING TRACE <small>V1.0</small></div>
+          </div>
+          <div className="device-3d-shadow" />
         </div>
+        <div className="device-model-caption"><span>PT-ESP32-S3</span><small>등록된 기기 · 3D 미리보기</small></div>
       </div>
       <div className="vehicle-caption"><div><small>마지막으로 주차한 장소</small><h2>지하 2층 <span>B2</span></h2><p><MapPin size={15} /> 센트럴 주차장 · A 구역 A-14</p></div><span className="confidence-chip"><ShieldCheck size={14} /> 신뢰도 높음</span></div>
     </section>
