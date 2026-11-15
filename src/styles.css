@@ -100,3 +100,21 @@ button{font:inherit;cursor:pointer;color:inherit}.sidebar{width:250px;position:f
 .device-model-caption small{font-size:8px}
 @keyframes deviceFloat{0%,100%{transform:rotateX(52deg) rotateZ(-19deg) translateY(0)}50%{transform:rotateX(52deg) rotateZ(-19deg) translateY(-5px)}}
 @media(max-width:700px){.device-3d-stage{height:166px}.device-3d-scene{transform:scale(.88) rotateX(52deg) rotateZ(-19deg)}@keyframes deviceFloat{0%,100%{transform:scale(.88) rotateX(52deg) rotateZ(-19deg) translateY(0)}50%{transform:scale(.88) rotateX(52deg) rotateZ(-19deg) translateY(-5px)}}}
+
+
+/* Vehicle-mounted complete device enclosure */
+.device-case{position:relative;padding:9px;border-radius:17px;background:linear-gradient(145deg,#f4f7f5,#b9c5bf 45%,#e7ece8);border:2px solid #77877e;box-shadow:inset 0 2px 5px #fff,0 8px 0 #84938a,0 12px 18px #14291c35;transform:translateZ(2px)}
+.device-case:before,.device-case:after{content:"";position:absolute;width:8px;height:8px;border-radius:50%;background:radial-gradient(circle at 35% 35%,#f8faf8,#66746c);border:1px solid #78857e;z-index:5}
+.device-case:before{top:5px;left:5px}.device-case:after{right:5px;bottom:5px}
+.case-label{position:absolute;top:-15px;left:50%;transform:translateX(-50%);white-space:nowrap;padding:3px 9px;border-radius:5px;background:#e9efeb;border:1px solid #9ba9a0;color:#405249;font-size:6px;font-weight:900;letter-spacing:1px;z-index:8;box-shadow:0 2px 4px #0002}
+.case-label small{font-size:5px;margin-left:5px;color:#718078}
+.device-board{border-radius:8px}
+.device-register{margin:18px 0;padding:20px}
+.device-register h3{font-size:16px;margin:7px 0}
+.device-register p{font-size:12px;line-height:1.6;color:var(--muted-2);margin:0 0 17px}
+.device-register label{display:block;font-size:11px;font-weight:700;margin-bottom:7px}
+.device-register-row{display:flex;gap:8px}
+.device-register-row input{min-width:0;flex:1;height:42px;border:1px solid var(--line);border-radius:9px;background:var(--surface-2);padding:0 12px;color:var(--text);font:inherit;font-size:13px}
+.device-register-row .primary-button{white-space:nowrap;padding:0 16px}
+.device-register>small{display:block;margin-top:10px;font-size:10px;color:var(--muted)}
+@media(max-width:480px){.device-register-row{flex-direction:column}.device-register-row .primary-button{height:42px;justify-content:center}}
