@@ -57,6 +57,7 @@ class MainActivity : ComponentActivity() {
     private val packetInfo = mutableStateOf("수신 대기 중")
     private val isScanning = mutableStateOf(false)
     private var gatt: BluetoothGatt? = null
+    private val pendingReads = ArrayDeque<BluetoothGattCharacteristic>()
     private val adapter by lazy { BluetoothAdapter.getDefaultAdapter() }
 
     private val scanCallback = object : ScanCallback() {
@@ -100,30 +101,21 @@ class MainActivity : ComponentActivity() {
                 return
             }
             status.value = "기기 연결됨"
-            service.getCharacteristic(DeviceId)?.let { g.readCharacteristic(it) }
-            service.getCharacteristic(ProtocolId)?.let { g.readCharacteristic(it) }
-            service.getCharacteristic(StatusId)?.let { g.readCharacteristic(it) }
-            service.getCharacteristic(TelemetryId)?.let { c ->
-                g.setCharacteristicNotification(c, true)
-                c.getDescriptor(CccdId)?.let { d ->
-                    if (Build.VERSION.SDK_INT >= 33) {
-                        g.writeDescriptor(d, BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE)
-                    } else {
-                        @Suppress("DEPRECATION")
-                        d.value = BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE
-                        @Suppress("DEPRECATION")
-                        g.writeDescriptor(d)
-                    }
-                }
-            }
+            pendingReads.clear()
+            service.getCharacteristic(DeviceId)?.let { pendingReads.add(it) }
+            service.getCharacteristic(ProtocolId)?.let { pendingReads.add(it) }
+            service.getCharacteristic(StatusId)?.let { pendingReads.add(it) }
+            readNext(g)
         }
 
         @Deprecated("Deprecated by Android")
         override fun onCharacteristicRead(g: BluetoothGatt, c: BluetoothGattCharacteristic, result: Int) {
             if (result == BluetoothGatt.GATT_SUCCESS) readValue(c.uuid, c.value ?: byteArrayOf())
+            readNext(g)
         }
         override fun onCharacteristicRead(g: BluetoothGatt, c: BluetoothGattCharacteristic, value: ByteArray, result: Int) {
             if (result == BluetoothGatt.GATT_SUCCESS) readValue(c.uuid, value)
+            readNext(g)
         }
         @Deprecated("Deprecated by Android")
         override fun onCharacteristicChanged(g: BluetoothGatt, c: BluetoothGattCharacteristic) {
@@ -131,6 +123,26 @@ class MainActivity : ComponentActivity() {
         }
         override fun onCharacteristicChanged(g: BluetoothGatt, c: BluetoothGattCharacteristic, value: ByteArray) {
             readValue(c.uuid, value)
+        }
+    }
+
+    @SuppressLint("MissingPermission")
+    private fun readNext(g: BluetoothGatt) {
+        val next = pendingReads.removeFirstOrNull()
+        if (next != null) {
+            g.readCharacteristic(next)
+            return
+        }
+        val telemetry = g.getService(ServiceId)?.getCharacteristic(TelemetryId) ?: return
+        g.setCharacteristicNotification(telemetry, true)
+        val descriptor = telemetry.getDescriptor(CccdId) ?: return
+        if (Build.VERSION.SDK_INT >= 33) {
+            g.writeDescriptor(descriptor, BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE)
+        } else {
+            @Suppress("DEPRECATION")
+            descriptor.value = BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE
+            @Suppress("DEPRECATION")
+            g.writeDescriptor(descriptor)
         }
     }
 
