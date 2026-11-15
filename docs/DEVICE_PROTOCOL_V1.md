@@ -76,29 +76,50 @@ V1.0 pairing requirements:
 
 The exact cryptographic message encoding and recovery procedure must be finalized before production firmware. Do not ship an implementation that treats a matching ID or an unauthenticated BLE connection as trusted.
 
-## 5. Telemetry payload
+## 5. Telemetry payload — V1.0 binary layout
 
-Telemetry is sent only after authentication. V1.0 uses a versioned compact binary payload; the app parser must reject unknown versions and invalid lengths.
+Telemetry is sent only after authentication. Each notification is exactly **40 bytes**. Multi-byte integers use **little-endian** byte order; signed values use two's-complement representation. The app rejects unknown schema versions and packet lengths other than 40 bytes.
 
-Logical fields:
+| Offset | Size | Field | Encoding / unit |
+|---:|---:|---|---|
+| 0 | 1 | schema_version | uint8; value 1 |
+| 1 | 2 | sequence | uint16; increments per report and wraps at 65535 |
+| 3 | 4 | timestamp | uint32 Unix seconds; 0 if not synchronized |
+| 7 | 1 | gnss_fix | 0=no fix, 1=2D, 2=3D |
+| 8 | 4 | latitude | int32; degrees × 10^7 |
+| 12 | 4 | longitude | int32; degrees × 10^7 |
+| 16 | 4 | altitude_mm | int32; GNSS altitude in millimetres |
+| 20 | 4 | pressure_pa | uint32; pascals |
+| 24 | 2 | temperature_centi_c | int16; degrees Celsius × 100 |
+| 26 | 2 | accel_x_mg | int16; milli-g |
+| 28 | 2 | accel_y_mg | int16; milli-g |
+| 30 | 2 | accel_z_mg | int16; milli-g |
+| 32 | 2 | gyro_x_mdps | int16; milli-degrees/second |
+| 34 | 2 | gyro_y_mdps | int16; milli-degrees/second |
+| 36 | 2 | gyro_z_mdps | int16; milli-degrees/second |
+| 38 | 1 | device_state | Device state enum in section 6 |
+| 39 | 1 | sensor_flags | Sensor availability bit flags |
 
-| Field | Type / unit | Notes |
-|---|---|---|
-| schema_version | uint8 | Starts at 1 |
-| sequence | uint16 | Increments for each report |
-| timestamp | uint32 | Unix seconds; 0 if device time is not synchronized |
-| gnss_fix | uint8 | 0=no fix, 1=2D, 2=3D |
-| latitude | int32 | Degrees × 10^7; valid only with fix |
-| longitude | int32 | Degrees × 10^7; valid only with fix |
-| altitude_mm | int32 | GNSS altitude in millimetres; optional/invalid flag when unavailable |
-| pressure_pa | uint32 | Barometric pressure in pascals |
-| temperature_centi_c | int16 | Temperature × 100 |
-| accel_x/y/z_mg | int16 each | Acceleration in milli-g |
-| gyro_x/y/z_mdps | int16 each | Angular velocity in milli-degrees/second |
-| device_state | uint8 | Booting, ready, moving, parked, error |
-| sensor_flags | uint8 | Bit flags for GNSS, BMP390, MPU6050 availability |
+### 5.1 Validity rules
 
-The final byte layout, byte order, scaling, validity flags, and notification interval must be frozen in a protocol revision before firmware implementation. The table above is the logical V1.0 data contract, not a byte-for-byte packet definition.
+- If `gnss_fix=0`, latitude, longitude, and altitude must be ignored.
+- If the BMP390 flag is clear, pressure and temperature must be ignored.
+- If the MPU6050 flag is clear, all acceleration and gyroscope fields must be ignored.
+- A zero timestamp means device time is not synchronized; the app uses its own receive time for freshness tracking.
+- Firmware must never substitute fabricated sensor values for unavailable readings.
+
+### 5.2 Sensor flags
+
+| Bit | Mask | Meaning |
+|---:|---:|---|
+| 0 | 0x01 | GNSS data valid |
+| 1 | 0x02 | BMP390 data valid |
+| 2 | 0x04 | MPU6050 data valid |
+| 3–7 | — | Reserved; transmit as 0 and ignore when received |
+
+### 5.3 Notification rate
+
+The target telemetry notification rate is 1 Hz. The sequence number increments once per emitted packet, not once per sensor sample. Raw IMU samples are processed on the device and are not streamed individually in V1.0.
 
 ## 6. Device states
 
@@ -176,8 +197,8 @@ Raw IMU samples should be processed on the device where possible. The app genera
 - Web UI: demo implementation.
 - Device ID registration form: demo state only; it does not yet persist securely or scan BLE.
 - 3D device preview: illustrative CSS artwork, not a dimensionally accurate CAD model.
-- BLE firmware: not implemented.
+- BLE firmware: initial NimBLE advertising and read-only GATT identity/status characteristics implemented in source; not yet compiled or hardware-tested.
 - Android BLE client: not implemented.
 - Authentication: specification requirement; implementation pending.
-- Telemetry: logical data contract drafted; binary packet format pending.
+- Telemetry: V1.0 40-byte little-endian packet layout defined; GATT notification implementation pending.
 
