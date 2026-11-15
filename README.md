@@ -31,3 +31,13 @@ npm run build
 
 ## 배포
 Vercel에서 Framework Preset을 Vite로 선택하고 배포할 수 있습니다.
+
+## Android 앱
+Kotlin + Jetpack Compose 기반 Android BLE 테스트 앱은 `android/` 폴더에 있습니다.
+
+- Android Studio에서 `android/` 폴더 열기
+- BLE 기기 검색 및 기기 ID 자동 매칭
+- Device ID / Protocol Version / Device Status 읽기
+- Telemetry Notify 및 40바이트 V1.0 패킷 확인
+
+자세한 실행 방법은 [Android README](android/README.md)를 참고하세요. 현재 실제 ESP32-S3 하드웨어 연결 테스트는 보드 준비 후 진행해야 합니다.
