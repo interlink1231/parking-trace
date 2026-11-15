@@ -56,6 +56,7 @@ class MainActivity : ComponentActivity() {
     private val packet = mutableStateOf<Packet?>(null)
     private val packetInfo = mutableStateOf("수신 대기 중")
     private val isScanning = mutableStateOf(false)
+    private val targetDeviceId = mutableStateOf("")
     private var gatt: BluetoothGatt? = null
     private val pendingReads = ArrayDeque<BluetoothGattCharacteristic>()
     private val adapter by lazy { BluetoothAdapter.getDefaultAdapter() }
@@ -66,6 +67,12 @@ class MainActivity : ComponentActivity() {
             if (devices.none { it.device.address == d.address }) {
                 val label = runCatching { d.name }.getOrNull() ?: result.scanRecord?.deviceName ?: "PARKING TRACE"
                 devices.add(Nearby(d, label))
+            }
+            val requestedId = targetDeviceId.value.trim().uppercase()
+            if (requestedId.matches(Regex("PT-[0-9A-F]{6}")) && label.uppercase() == requestedId) {
+                adapter?.bluetoothLeScanner?.stopScan(this)
+                isScanning.value = false
+                connect(d)
             }
         }
         override fun onScanFailed(errorCode: Int) {
@@ -230,7 +237,8 @@ class MainActivity : ComponentActivity() {
             }
             TraceScreen(
                 devices, status.value, deviceId.value, version.value, deviceStatus.value,
-                packet.value, packetInfo.value, isScanning.value,
+                packet.value, packetInfo.value, isScanning.value, targetDeviceId.value,
+                onTargetIdChange = { targetDeviceId.value = it.uppercase() },
                 onScan = {
                     if (permitted()) scan()
                     else permissionRequest.launch(
@@ -248,7 +256,8 @@ class MainActivity : ComponentActivity() {
 @Composable
 private fun TraceScreen(
     devices: List<Nearby>, status: String, deviceId: String, version: String, deviceStatus: String,
-    packet: Packet?, packetInfo: String, scanning: Boolean,
+    packet: Packet?, packetInfo: String, scanning: Boolean, targetDeviceId: String,
+    onTargetIdChange: (String) -> Unit,
     onScan: () -> Unit, onConnect: (BluetoothDevice) -> Unit, onDisconnect: () -> Unit
 ) {
     MaterialTheme {
@@ -277,8 +286,18 @@ private fun TraceScreen(
                                 if (scanning) CircularProgressIndicator(Modifier.size(20.dp), color = Blue, strokeWidth = 2.dp)
                             }
                             Spacer(Modifier.height(15.dp))
+                            OutlinedTextField(
+                                value = targetDeviceId,
+                                onValueChange = onTargetIdChange,
+                                modifier = Modifier.fillMaxWidth(),
+                                label = { Text("기기 고유번호") },
+                                placeholder = { Text("예: PT-A1B2C3") },
+                                singleLine = true,
+                                shape = RoundedCornerShape(12.dp)
+                            )
+                            Spacer(Modifier.height(8.dp))
                             Button(onClick = onScan, Modifier.fillMaxWidth(), colors = ButtonDefaults.buttonColors(containerColor = Blue), shape = RoundedCornerShape(13.dp)) {
-                                Text(if (scanning) "검색 중..." else "PARKING TRACE 기기 검색")
+                                Text(if (scanning) "검색 중..." else "기기 검색 및 자동 연결")
                             }
                             if (deviceId != "—") {
                                 Spacer(Modifier.height(8.dp))
