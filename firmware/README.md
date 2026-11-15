@@ -4,14 +4,13 @@ ESP-IDF firmware for the vehicle-mounted PARKING TRACE unit.
 
 ## Current implementation
 
-The first NimBLE milestone is implemented in source:
+- NimBLE peripheral advertises the PARKING TRACE custom 128-bit service UUID.
+- Read-only Device ID, Protocol Version, and Device Status characteristics.
+- Telemetry characteristic supports notifications.
+- A development-only telemetry task can send a 40-byte V1.0 packet once per second after the client subscribes.
+- Simulated packets deliberately mark all sensor values invalid; no fake GPS or sensor readings are presented as real data.
 
-- Advertises a BLE peripheral using the PARKING TRACE custom 128-bit service UUID.
-- Uses a stable board-specific identifier in the form `PT-XXXXXX`, derived from the Bluetooth MAC address suffix.
-- Exposes read-only Device ID, Protocol Version, and Device Status characteristics.
-- Restarts advertising after a client disconnects.
-
-The current Device Status value is the static text `READY`. Sensor telemetry, authentication, and secure device claiming are not implemented yet.
+The demo notification option is **disabled by default**.
 
 ## Target hardware
 
@@ -34,10 +33,13 @@ Equivalent terminal commands:
 
 ```bash
 idf.py set-target esp32s3
+idf.py menuconfig
 idf.py build
 ```
 
-If the project was previously configured for another target, remove the old build configuration using the ESP-IDF extension's full-clean command before rebuilding.
+To enable the development notification stream, open `idf.py menuconfig`, navigate to **PARKING TRACE Firmware**, and enable **Enable simulated telemetry notifications (development only)**. Build again afterwards.
+
+Keep this option disabled for production firmware. The simulated packet contains a valid schema/version/state/sequence but leaves all sensor-validity flags clear.
 
 ## BLE characteristics
 
@@ -46,14 +48,15 @@ If the project was previously configured for another target, remove the old buil
 | Device ID | Read | PT-XXXXXX |
 | Protocol Version | Read | 1.0 |
 | Device Status | Read | READY |
+| Telemetry | Notify | 40-byte V1.0 packet (development option only) |
 
-The UUIDs must remain synchronized with `docs/DEVICE_PROTOCOL_V1.md`.
+The UUIDs and packet offsets must remain synchronized with `docs/DEVICE_PROTOCOL_V1.md`.
 
 ## Important limitations
 
 - Device ID is an identifier, not an authentication secret.
-- The MAC-derived ID is suitable for development identification, not proof of ownership.
-- Do not treat a matching Device ID as authorization to control or trust a device.
+- The MAC-derived ID is development-only and does not guarantee global uniqueness. Production IDs must be provisioned centrally and stored in NVS.
+- Do not treat a matching Device ID as authorization to trust a device.
 - Secure claim/pairing and challenge-response authentication must be implemented before production use.
 - BLE code has not yet been compiled or tested on physical hardware in this development session.
 - No vehicle-control interfaces are implemented; the device is sensing-only.
