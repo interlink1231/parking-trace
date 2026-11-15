@@ -1,0 +1,11 @@
+menu "PARKING TRACE Firmware"
+
+    config PT_DEMO_TELEMETRY
+        bool "Enable simulated telemetry notifications (development only)"
+        default n
+        help
+            Enables a 1 Hz development-only telemetry notification stream.
+            Sensor validity flags remain clear and sensor values are not fabricated.
+            Keep this disabled for production firmware.
+
+endmenu
