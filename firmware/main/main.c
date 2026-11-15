@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "sdkconfig.h"
 #include "esp_err.h"
 #include "esp_log.h"
 #include "esp_mac.h"
@@ -26,7 +27,10 @@ static char s_device_id[PT_DEVICE_ID_LENGTH + 1];
 static uint16_t s_device_id_handle;
 static uint16_t s_protocol_handle;
 static uint16_t s_status_handle;
+static uint16_t s_telemetry_handle;
+static uint16_t s_connection_handle = BLE_HS_CONN_HANDLE_NONE;
 static uint8_t s_own_addr_type;
+static bool s_telemetry_subscribed;
 
 /* NimBLE stores 128-bit UUID bytes in little-endian order. */
 static const ble_uuid128_t s_service_uuid =
@@ -41,6 +45,9 @@ static const ble_uuid128_t s_protocol_uuid =
 static const ble_uuid128_t s_status_uuid =
     BLE_UUID128_INIT(0x43, 0x52, 0x54, 0x50, 0x8f, 0x4e, 0x20, 0x9c,
                      0x91, 0x4a, 0x4f, 0x6d, 0x04, 0x00, 0x2a, 0x7b);
+static const ble_uuid128_t s_telemetry_uuid =
+    BLE_UUID128_INIT(0x43, 0x52, 0x54, 0x50, 0x8f, 0x4e, 0x20, 0x9c,
+                     0x91, 0x4a, 0x4f, 0x6d, 0x06, 0x00, 0x2a, 0x7b);
 
 static int read_string_characteristic(struct ble_gatt_access_ctxt *ctxt,
                                       void *arg)
@@ -79,6 +86,11 @@ static const struct ble_gatt_chr_def s_characteristics[] = {
         .flags = BLE_GATT_CHR_F_READ,
         .val_handle = &s_status_handle,
     },
+    {
+        .uuid = &s_telemetry_uuid.u,
+        .flags = BLE_GATT_CHR_F_NOTIFY,
+        .val_handle = &s_telemetry_handle,
+    },
     {0},
 };
 
@@ -100,6 +112,8 @@ static int gap_event(struct ble_gap_event *event, void *arg)
     switch (event->type) {
     case BLE_GAP_EVENT_CONNECT:
         if (event->connect.status == 0) {
+            s_connection_handle = event->connect.conn_handle;
+            s_telemetry_subscribed = false;
             ESP_LOGI(TAG, "BLE client connected");
         } else {
             ESP_LOGW(TAG, "BLE connection failed; restarting advertising");
@@ -108,8 +122,19 @@ static int gap_event(struct ble_gap_event *event, void *arg)
         return 0;
 
     case BLE_GAP_EVENT_DISCONNECT:
+        s_connection_handle = BLE_HS_CONN_HANDLE_NONE;
+        s_telemetry_subscribed = false;
         ESP_LOGI(TAG, "BLE client disconnected; restarting advertising");
         start_advertising();
+        return 0;
+
+    case BLE_GAP_EVENT_SUBSCRIBE:
+        if (event->subscribe.attr_handle == s_telemetry_handle) {
+            s_connection_handle = event->subscribe.conn_handle;
+            s_telemetry_subscribed = event->subscribe.cur_notify;
+            ESP_LOGI(TAG, "Telemetry notifications %s",
+                     s_telemetry_subscribed ? "enabled" : "disabled");
+        }
         return 0;
 
     case BLE_GAP_EVENT_ADV_COMPLETE:
@@ -179,10 +204,79 @@ static void make_device_id(void)
     uint8_t mac[6] = {0};
     ESP_ERROR_CHECK(esp_read_mac(mac, ESP_MAC_BT));
 
-    /* Stable per-board identifier derived from the Bluetooth MAC suffix. */
+    /* Development-only ID. Production IDs must be provisioned centrally. */
     snprintf(s_device_id, sizeof(s_device_id), "PT-%02X%02X%02X",
              mac[3], mac[4], mac[5]);
 }
+
+#if CONFIG_PT_DEMO_TELEMETRY
+static void put_u16_le(uint8_t *buffer, size_t offset, uint16_t value)
+{
+    buffer[offset] = (uint8_t)(value & 0xff);
+    buffer[offset + 1] = (uint8_t)(value >> 8);
+}
+
+static void put_u32_le(uint8_t *buffer, size_t offset, uint32_t value)
+{
+    buffer[offset] = (uint8_t)(value & 0xff);
+    buffer[offset + 1] = (uint8_t)((value >> 8) & 0xff);
+    buffer[offset + 2] = (uint8_t)((value >> 16) & 0xff);
+    buffer[offset + 3] = (uint8_t)(value >> 24);
+}
+
+static void build_demo_packet(uint8_t packet[PT_TELEMETRY_PACKET_SIZE],
+                              uint16_t sequence)
+{
+    memset(packet, 0, PT_TELEMETRY_PACKET_SIZE);
+
+    packet[PT_TELEMETRY_OFFSET_SCHEMA_VERSION] =
+        PT_TELEMETRY_SCHEMA_VERSION;
+    put_u16_le(packet, PT_TELEMETRY_OFFSET_SEQUENCE, sequence);
+
+    /* Timestamp remains zero until the device has a trusted wall clock. */
+    packet[PT_TELEMETRY_OFFSET_GNSS_FIX] = 0;
+    packet[PT_TELEMETRY_OFFSET_DEVICE_STATE] = PT_STATE_READY;
+
+    /* All sensor-validity bits remain clear: no sensor data is fabricated. */
+    packet[PT_TELEMETRY_OFFSET_SENSOR_FLAGS] = 0;
+}
+
+static void telemetry_demo_task(void *param)
+{
+    (void)param;
+    uint16_t sequence = 0;
+
+    ESP_LOGW(TAG, "DEVELOPMENT MODE: simulated telemetry notifications enabled");
+    ESP_LOGW(TAG, "Sensor fields are marked invalid; no real sensor data is sent");
+
+    while (1) {
+        vTaskDelay(pdMS_TO_TICKS(1000));
+
+        if (!s_telemetry_subscribed ||
+            s_connection_handle == BLE_HS_CONN_HANDLE_NONE) {
+            continue;
+        }
+
+        uint8_t packet[PT_TELEMETRY_PACKET_SIZE];
+        build_demo_packet(packet, sequence++);
+
+        struct os_mbuf *om = ble_hs_mbuf_from_flat(
+            packet, sizeof(packet));
+        if (om == NULL) {
+            ESP_LOGW(TAG, "Could not allocate telemetry notification buffer");
+            continue;
+        }
+
+        int rc = ble_gatts_notify_custom(
+            s_connection_handle, s_telemetry_handle, om);
+        if (rc != 0) {
+            ESP_LOGW(TAG, "Telemetry notification failed: %d", rc);
+        } else {
+            ESP_LOGD(TAG, "Sent demo telemetry packet");
+        }
+    }
+}
+#endif
 
 void app_main(void)
 {
@@ -199,6 +293,12 @@ void app_main(void)
     ESP_LOGI(TAG, "PARKING TRACE firmware starting");
     ESP_LOGI(TAG, "Device ID: %s", s_device_id);
     ESP_LOGI(TAG, "Protocol version: %s", PT_PROTOCOL_VERSION);
+
+#if CONFIG_PT_DEMO_TELEMETRY
+    ESP_LOGW(TAG, "Demo telemetry is enabled; do not use this build in production");
+#else
+    ESP_LOGI(TAG, "Demo telemetry is disabled");
+#endif
 
     ESP_ERROR_CHECK(nimble_port_init());
 
@@ -219,6 +319,10 @@ void app_main(void)
         ESP_LOGE(TAG, "ble_gatts_add_svcs failed: %d", rc);
         return;
     }
+
+#if CONFIG_PT_DEMO_TELEMETRY
+    xTaskCreate(telemetry_demo_task, "pt_telemetry_demo", 3072, NULL, 5, NULL);
+#endif
 
     nimble_port_freertos_init(nimble_host_task);
 }
