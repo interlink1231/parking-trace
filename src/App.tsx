@@ -91,7 +91,7 @@ function PageHeading({ eyebrow, title, description, action }: { eyebrow: string;
 function HomePage({ onNavigate }: { onNavigate: (p: Page) => void }) {
   return <>
     <div className="blue-home-head">
-      <div><span className="blue-kicker">PARKING TRACE</span><h1>내 차량</h1></div>
+      <div><span className="blue-kicker">LAST PARKING LOCATION</span><h1>마지막 주차 위치</h1></div>
       <button className="blue-settings" onClick={() => onNavigate('settings')} aria-label="설정"><Settings size={21} /></button>
     </div>
     <section className="vehicle-card">
@@ -103,7 +103,7 @@ function HomePage({ onNavigate }: { onNavigate: (p: Page) => void }) {
           <div className="car-body"><div className="car-glass-front" /><div className="car-glass-back" /><div className="car-roof" /><div className="car-line" /><div className="car-wheel wheel-left" /><div className="car-wheel wheel-right" /></div>
         </div>
       </div>
-      <div className="vehicle-caption"><div><small>저장된 주차 위치</small><h2>지하 2층 <span>B2</span></h2><p><MapPin size={15} /> 센트럴 주차장 · A 구역 A-14</p></div><span className="confidence-chip"><ShieldCheck size={14} /> 신뢰도 높음</span></div>
+      <div className="vehicle-caption"><div><small>마지막으로 주차한 장소</small><h2>지하 2층 <span>B2</span></h2><p><MapPin size={15} /> 센트럴 주차장 · A 구역 A-14</p></div><span className="confidence-chip"><ShieldCheck size={14} /> 신뢰도 높음</span></div>
     </section>
 
     <div className="blue-section-title"><div><h3>빠른 메뉴</h3><p>주차 위치와 기록을 빠르게 확인하세요.</p></div></div>
