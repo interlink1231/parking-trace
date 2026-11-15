@@ -99,7 +99,7 @@ function HomePage({ onNavigate }: { onNavigate: (p: Page) => void }) {
       <div className="device-3d-stage">
         <div className="device-3d-glow" />
         <div className="device-3d-scene" aria-label="PARKING TRACE 등록 기기 3D 미리보기">
-          <div className="device-board">
+          <div className="device-case"><div className="case-label">PARKING TRACE <small>VEHICLE UNIT</small></div><div className="device-board">
             <div className="board-edge" />
             <div className="pin-row pin-top">{Array.from({length:14}).map((_,i)=><i key={i}/>)}</div>
             <div className="pin-row pin-bottom">{Array.from({length:14}).map((_,i)=><i key={i}/>)}</div>
@@ -109,11 +109,11 @@ function HomePage({ onNavigate }: { onNavigate: (p: Page) => void }) {
             <div className="imu-module"><span>MPU6050</span></div>
             <div className="baro-module"><span>BMP390</span></div>
             <div className="board-led led-one" /><div className="board-led led-two" />
-            <div className="board-mark">PARKING TRACE <small>V1.0</small></div>
-          </div>
+            <div className="board-mark">PT MAINBOARD <small>V1.0</small></div>
+          </div></div>
           <div className="device-3d-shadow" />
         </div>
-        <div className="device-model-caption"><span>PT-ESP32-S3</span><small>등록된 기기 · 3D 미리보기</small></div>
+        <div className="device-model-caption"><span>PT-000001</span><small>차량 부착형 등록 기기 · 3D 미리보기</small></div>
       </div>
       <div className="vehicle-caption"><div><small>마지막으로 주차한 장소</small><h2>지하 2층 <span>B2</span></h2><p><MapPin size={15} /> 센트럴 주차장 · A 구역 A-14</p></div><span className="confidence-chip"><ShieldCheck size={14} /> 신뢰도 높음</span></div>
     </section>
@@ -191,9 +191,11 @@ function HistoryPage({ showAll, setShowAll, search, setSearch }: { showAll: bool
 }
 
 function DevicePage({ onNotify }: { onNotify: (s: string) => void }) {
+  const [deviceId, setDeviceId] = useState('PT-000001')
+  const [registeredId, setRegisteredId] = useState('PT-000001')
   return <>
     <PageHeading eyebrow="DEVICE CENTER" title="기기 관리" description="차량에 설치된 PARKING TRACE 장치의 연결과 센서 상태를 확인합니다." action={<span className="connected-pill"><span className="live-dot" /> CONNECTED</span>} />
-    <section className="device-hero panel"><div className="device-graphic"><div className="device-ring"><Radio size={42} /></div><span className="device-orbit orbit-a" /><span className="device-orbit orbit-b" /></div><div className="device-main-info"><span className="eyebrow">CONNECTED DEVICE</span><h2>PT-ESP32-S3</h2><p>ESP32-S3 DevKitC-1 · PARKING TRACE V1</p><div className="device-tags"><span><Bluetooth size={13} /> Bluetooth LE</span><span><Wifi size={13} /> BLE 연결</span><span><Battery size={13} /> 배터리 86%</span></div></div><button className="outline-button" onClick={() => onNotify('기기 재검색은 BLE 기능 구현 후 제공됩니다.')}><Radio size={16} /> 기기 재검색</button></section>
+    <section className="device-hero panel"><div className="device-graphic"><div className="device-ring"><Radio size={42} /></div><span className="device-orbit orbit-a" /><span className="device-orbit orbit-b" /></div><div className="device-main-info"><span className="eyebrow">VEHICLE-MOUNTED DEVICE</span><h2>{registeredId}</h2><p>PARKING TRACE 차량 부착형 통합 장치</p><div className="device-tags"><span><Bluetooth size={13} /> Bluetooth LE</span><span><Wifi size={13} /> BLE 연결</span><span><Battery size={13} /> 배터리 86%</span></div></div><button className="outline-button" onClick={() => onNotify('기기 재검색은 BLE 기능 구현 후 제공됩니다.')}><Radio size={16} /> 기기 재검색</button></section>
     <div className="section-row"><div><h3>센서 상태</h3><p>연결된 센서의 샘플 상태</p></div><span className="updated-label">샘플 데이터</span></div>
     <div className="sensor-grid">
       <Sensor icon={<Signal size={19} />} name="GNSS / GPS" model="M10 Mini GPS" state="대기 중" value="실제 위치 미연결" />
@@ -201,7 +203,13 @@ function DevicePage({ onNotify }: { onNotify: (s: string) => void }) {
       <Sensor icon={<ArrowUpRight size={19} />} name="기압 센서" model="BMP390" state="정상" value="기압 데이터 대기" />
       <Sensor icon={<Bluetooth size={19} />} name="Bluetooth LE" model="ESP32-S3 내장" state="연결됨" value="신호 상태 양호" />
     </div>
-    <section className="panel device-settings"><div><h3>기기 정보</h3><p>장치 식별 및 펌웨어 정보</p></div><InfoLine label="장치 ID" value="PT-ESP32-S3-0001" /><InfoLine label="펌웨어 버전" value="V1.0.0 (예정)" /><InfoLine label="연결 방식" value="Bluetooth Low Energy" /><InfoLine label="마지막 통신" value="방금 전 (샘플)" /></section>
+    <section className="panel device-register">
+      <div><span className="eyebrow">DEVICE REGISTRATION</span><h3>기기 등록</h3><p>차량에 부착된 기기의 고유 ID를 입력하세요. 등록 후 해당 ID와 일치하는 기기를 BLE로 자동 연결합니다.</p></div>
+      <label htmlFor="device-id-input">기기 고유번호</label>
+      <div className="device-register-row"><input id="device-id-input" value={deviceId} onChange={e => setDeviceId(e.target.value.toUpperCase())} placeholder="예: PT-000001" /><button className="primary-button" onClick={() => { if (!deviceId.trim()) { onNotify('기기 고유번호를 입력해 주세요.'); return } setRegisteredId(deviceId.trim()); onNotify('기기 ID가 앱에 등록되었습니다. 실제 BLE 자동 연결은 기기 펌웨어 연동 후 활성화됩니다.') }}>기기 등록</button></div>
+      <small>현재는 UI 시연 단계이며 실제 BLE 검색·인증·연결은 아직 구현되지 않았습니다.</small>
+    </section>
+    <section className="panel device-settings"><div><h3>기기 정보</h3><p>장치 식별 및 펌웨어 정보</p></div><InfoLine label="고유 기기 ID" value={registeredId} /><InfoLine label="펌웨어 버전" value="V1.0.0 (예정)" /><InfoLine label="연결 방식" value="Bluetooth Low Energy" /><InfoLine label="마지막 통신" value="방금 전 (샘플)" /></section>
   </>
 }
 
